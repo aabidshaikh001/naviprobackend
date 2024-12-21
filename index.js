@@ -19,7 +19,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(bodyParser.json());
-app.use(cors({ origin: process.env.FRONTENDURL, credentials: true }));
+app.use(cors({ origin: "https://www.navipro.in/", credentials: true }));
 
 // Connect to the database
 connectDB();
