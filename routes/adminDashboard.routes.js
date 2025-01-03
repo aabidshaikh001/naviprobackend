@@ -3,6 +3,8 @@ import User from '../models/user.model.js';
 import UserDetails from '../models/UserDetails.js';
 import AdminDashboard from '../models/adminDashboard.model.js';
 
+
+
 const router = express.Router();
 
 /**
@@ -40,8 +42,8 @@ router.get('/userDetails', async (req, res) => {
     const userDetails = await UserDetails.find().lean(); // Fetch user details
 
     const formattedDetails = userDetails.map((detail) => ({
-      fullName:detail.fullName || null,
-      fatherName: detail.fatherName || null,
+      id: detail._id, // Include the unique ID for deletion
+      fullName: detail.fullName || null,
       fatherName: detail.fatherName || null,
       dateOfBirth: detail.dateOfBirth || 'N/A',
       employmentType: detail.employmentType || 'N/A',
@@ -50,12 +52,40 @@ router.get('/userDetails', async (req, res) => {
       aadharNumber: detail.aadharNumber || 'N/A',
       panNumber: detail.panNumber || 'N/A',
       creditCard: detail.creditCard || 'N/A',
+      selfiePhoto: detail.selfiePhoto || null,
+aadharFrontPhoto: detail.aadharFrontPhoto || null,
+aadharBackPhoto: detail.aadharBackPhoto || null,
+panCardPhoto: detail.panCardPhoto || null,
+
     }));
 
     res.status(200).json({ userDetails: formattedDetails });
   } catch (error) {
     console.error('Error fetching user details:', error);
     res.status(500).json({ error: 'Failed to fetch user details.' });
+  }
+});
+
+/**
+ * @route DELETE /admin/userDetails/:id
+ * @desc Delete a user's details by ID
+ * @access Private
+ */
+router.delete('/userDetails/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Attempt to delete the user details by ID
+    const result = await UserDetails.findByIdAndDelete(id);
+
+    if (!result) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    res.status(200).json({ message: 'User deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ error: 'Failed to delete user.' });
   }
 });
 
@@ -99,5 +129,8 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Failed to login', details: error.message });
   }
 });
+
+
+
 
 export default router;

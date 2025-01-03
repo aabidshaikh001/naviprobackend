@@ -2,18 +2,52 @@
 import User from "../models/user.model.js";
 import UserDetails from "../models/UserDetails.js";
 import CreditCard from "../models/creditCard.Model.js";
+import { v2 as cloudinary } from "cloudinary";
 
 export const saveUserDetails = async (req, res) => {
   try {
-    const { fullName, fatherName, dateOfBirth, pinCode, address, aadharNumber, panNumber } = req.body;
+    const {
+      fullName,
+      fatherName,
+      dateOfBirth,
+      pinCode,
+      address,
+      aadharNumber,
+      panNumber,
+      gender,
+      employmentType,
+    } = req.body;
 
     // Validate required fields
-    if (!fullName || !fatherName || !dateOfBirth || !pinCode || !address || !aadharNumber || !panNumber) {
+    if (
+      !fullName ||
+      !fatherName ||
+      !dateOfBirth ||
+      !pinCode ||
+      !address ||
+      !aadharNumber ||
+      !panNumber ||
+      !gender ||
+      !employmentType) {
       return res.status(400).json({ error: "All fields are required." });
     }
 
+       // Process uploaded files
+       const fileUrls = {};
+       if (req.files) {
+         for (const [fileKey, fileArray] of Object.entries(req.files)) {
+           const file = fileArray[0]; // Multer stores files in an array
+           console.log(`Uploading ${fileKey}:`, file.path); // Debugging log
+           const result = await cloudinary.uploader.upload(file.path, {
+             folder: "user_details",
+           });
+           fileUrls[fileKey] = result.secure_url;
+         }
+       }
+   
    
 
+   
     const newUserDetails = new UserDetails({
       fullName,
       fatherName,
@@ -22,15 +56,25 @@ export const saveUserDetails = async (req, res) => {
       address,
       aadharNumber,
       panNumber,
+      gender,
+      employmentType,
+      selfiePhoto: fileUrls.selfiePhoto || null,
+      aadharFrontPhoto: fileUrls.aadharFrontPhoto || null,
+      aadharBackPhoto: fileUrls.aadharBackPhoto || null,
+      panCardPhoto: fileUrls.panCardPhoto || null,
     });
 
     await newUserDetails.save();
-    res.status(201).json({ message: "User details saved successfully" });
+    res.status(201).json({
+      message: "User details saved successfully",
+      userDetails: newUserDetails,
+    });
   } catch (error) {
     console.error("Error saving user details:", error.message);
-    res
-      .status(500)
-      .json({ error: "Failed to save user details", details: error.message });
+    res.status(500).json({
+      error: "Failed to save user details",
+      details: error.message,
+    });
   }
 };
 
