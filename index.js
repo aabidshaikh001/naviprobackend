@@ -22,7 +22,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(bodyParser.json());
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(cors({ origin: "https://www.navipro.in", credentials: true }));
 
 // Connect to the database
 connectDB();
@@ -41,7 +41,7 @@ const httpServer = createServer(app);
 // Initialize Socket.IO
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:3000", // Allow requests from your frontend
+    origin: "https://www.navipro.in", // Allow requests from your frontend
     methods: ["GET", "POST"],
   },
 });
