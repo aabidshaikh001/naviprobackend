@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
     income: { type: Number, required: true },
         creditCard: { type: mongoose.Schema.ObjectId,ref: "CreditCard" },
     password: { type: String, required: true },
+   
   },
   { timestamps: true }
 );
