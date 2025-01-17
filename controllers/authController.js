@@ -22,7 +22,18 @@ export const register = async (req, res) => {
     const user = new User({ name, email, phone, applyFor, income, password });
     await user.save();
 
-    res.status(201).json({ message: "User registered successfully." });
+    res.status(201).json({
+      message: "User registered successfully.",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        applyFor: user.applyFor,
+        income: user.income,
+        createdAt: user.createdAt,  // Include the registration timestamp
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: "Registration failed.", error });
   }
