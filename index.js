@@ -1,6 +1,4 @@
 import express from "express";
-import { createServer } from "http"; // To create an HTTP server for Socket.IO
-import { Server } from "socket.io"; // Import Socket.IO
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import cors from "cors";
@@ -10,6 +8,8 @@ import authRoutes from "./routes/authRoutes.js";
 import userDetailsRoutes from "./routes/userDetailsRoutes.js"; // Import user details routes
 import adminRoutes from './routes/adminDashboard.routes.js';
 import qrRoutes from './routes/qrRoutes.js';
+
+import { updatesRef, paymentsRef } from "./config/firebase.js";
 
 
 // Load environment variables
@@ -22,7 +22,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(bodyParser.json());
-app.use(cors({ origin: "https://www.navipro.in", credentials: true }));
+app.use(cors({ origin: process.env.FRONTENDURL, credentials: true }));
 
 // Connect to the database
 connectDB();
@@ -32,51 +32,35 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user-details", userDetailsRoutes);
 app.use('/api', qrRoutes);
 app.use('/admin', adminRoutes);
+// Firebase Realtime Database reference
+
 // Routes
 
 
-// Create an HTTP server for Socket.IO
-const httpServer = createServer(app);
-
-// Initialize Socket.IO
-const io = new Server(httpServer, {
-  cors: {
-    origin: "https://www.navipro.in", // Allow requests from your frontend
-    methods: ["GET", "POST"],
-  },
+// ✅ Firebase Update Route
+app.post("/api/sendUpdate", async (req, res) => {
+  try {
+    const { message, price, limits, buttonLabel } = req.body;
+    await updatesRef.push({ message, price, limits, buttonLabel, timestamp: Date.now() });
+    res.status(200).json({ success: true, message: "Update sent!" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to send update.", error: error.message });
+  }
 });
 
-io.on("connection", (socket) => {
-    
-  
-    socket.on("sendUpdate", (data) => {
-    
-      // Broadcast to all clients
-      socket.broadcast.emit("receiveUpdate", {
-        message: data.message,
-        price: data.price,
-        limits: data.limits || {}, // Broadcast limits if available
-      });
-    });
-    // socket.on("showForm", (data) => {
-    //   console.log("Show form event received:", data);
-    //   io.emit("showForm", data); // Broadcast the event to all connected clients
-    // });
-  
-    socket.on("sendPaid", (data) => {
-      console.log("Paid Event:", data);
-      socket.broadcast.emit("receivePaid", data);
-    });
-    
-  
-    socket.on("disconnect", () => {
-      
-    });
-  });
- 
-  
+// ✅ Firebase Payment Route
+app.post("/api/sendPaid", async (req, res) => {
+  try {
+    const { data } = req.body;
+    await paymentsRef.push({ ...data, timestamp: Date.now() });
+    res.status(200).json({ success: true, message: "Payment event sent!" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to send payment event.", error: error.message });
+  }
+})
   
 
-// Start the server
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
